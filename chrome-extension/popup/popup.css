@@ -156,3 +156,21 @@ div.css {
     border: 1px solid var(--server-online-stroke);
     background-color: var(--server-online-fill);
 }
+
+.managed-lock {
+    margin-left: 4px;
+    cursor: default;
+    font-size: 14px;
+    line-height: 1;
+}
+
+#server-address.managed {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#server-address-reset.managed {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+}

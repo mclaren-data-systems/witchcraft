@@ -46,5 +46,8 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'"
   },
+  "storage": {
+    "managed_schema": "managed_schema.json"
+  },
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAjzqrpSUv6MTDsg0iay4oaGSBy/hErXo0W+vDixY0nrsptpVVzgd9bta0OepfLqEJxDLWLrp7XR7Q85DMy1gsY8VmCdowIPW+JQMxnogk8SIzwMMeonLZVyfqoaNn4/vzReMjn0iIRKcf6wznQ53podXZcCSGKBHah3Be0FSBaDXkzzIPq1WNpZa04OWwEcIc+V/bF4NvN9ySl45c+9dpt7hd2ly9gLf7Q6lZXVJHr4Z9EQr00dQnsmotDseHiuLq1GkhmiG3N9PdxxCbQ+yXjoSIsbEFK+prQQhGN4jr58nrXkZHF9PvFgpLaikrTtr0EDAbR56Flhh2pGJSQFVYVwIDAQAB"
 }

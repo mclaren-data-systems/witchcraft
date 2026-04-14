@@ -72,7 +72,18 @@ function frameScriptsKey(tabId, frameId) {
     return `${storage.FRAME_SCRIPTS_KEY_PREFIX}:${tabId}:${frameId}`;
 }
 
+const MANAGED_SERVER_ADDRESS_KEY = "serverAddress";
+
+async function isServerAddressManaged() {
+    const managed = await browser.retrieveManagedKey(MANAGED_SERVER_ADDRESS_KEY);
+    return managed !== undefined && managed !== null && managed !== "";
+}
+
 async function retrieveServerAddress(defaultAddress = DEFAULT_SERVER_ADDRESS) {
+    const managed = await browser.retrieveManagedKey(MANAGED_SERVER_ADDRESS_KEY);
+    if (managed !== undefined && managed !== null && managed !== "") {
+        return managed;
+    }
     return (await browser.retrieveKey(SERVER_ADDRESS_KEY)) ?? defaultAddress;
 }
 
@@ -144,6 +155,7 @@ export const storage = {
     storeIcon,
     storeServerAddress,
     addToTabScriptSet,
+    isServerAddressManaged,
     storeServerStatus,
     retrieveServerStatus,
 }
