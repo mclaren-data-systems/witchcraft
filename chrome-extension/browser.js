@@ -158,6 +158,22 @@ async function retrieveKey(key) {
     });
 }
 
+async function retrieveManagedKey(key) {
+    try {
+        return await new Promise((resolve, reject) => {
+            browser.chrome().storage.managed.get(key, result => {
+                if (browser.chrome().runtime.lastError) {
+                    reject(browser.chrome().runtime.lastError);
+                } else {
+                    resolve(result[key]);
+                }
+            });
+        });
+    } catch {
+        return undefined;
+    }
+}
+
 async function setBadgeText(tabId, text) {
     return new Promise(resolve => {
         browser.chrome().action.setBadgeText({
@@ -211,6 +227,7 @@ export const browser = {
     removeKey,
     retrieveAllEntries,
     retrieveKey,
+    retrieveManagedKey,
     sendMessage,
     setBadgeText,
     setIcon,

@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "serverAddress": {
+      "title": "Witchcraft Server Address",
+      "description": "The URL of the Witchcraft server to fetch scripts from. When set by policy, users cannot override this value.",
+      "type": "string"
+    }
+  }
+}

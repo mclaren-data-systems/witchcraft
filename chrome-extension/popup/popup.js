@@ -170,23 +170,36 @@ class Popup {
 
     /** @return {void} */
     async makeAdvancedPanel() {
+        const managed = await storage.isServerAddressManaged();
+
         async function readServerAddress() {
             const serverAddressInput = document.getElementById("server-address");
             serverAddressInput.value = await storage.retrieveServerAddress();
-            serverAddressInput.addEventListener("input", async event => {
-                await browser.storeKey("server-address", event.target.value);
-            });
+
+            if (managed) {
+                serverAddressInput.disabled = true;
+                serverAddressInput.classList.add("managed");
+                document.getElementById("managed-lock").classList.remove("hidden");
+            } else {
+                serverAddressInput.addEventListener("input", async event => {
+                    await browser.storeKey("server-address", event.target.value);
+                });
+            }
         }
 
         await readServerAddress();
 
         const resetButton = document.getElementById("server-address-reset");
-        resetButton.addEventListener("click", async event => {
-            await browser.storeKey("server-address", DEFAULT_SERVER_ADDRESS);
-            await readServerAddress();
-            event.preventDefault();
-            return false;
-        });
+        if (managed) {
+            resetButton.classList.add("managed");
+        } else {
+            resetButton.addEventListener("click", async event => {
+                await browser.storeKey("server-address", DEFAULT_SERVER_ADDRESS);
+                await readServerAddress();
+                event.preventDefault();
+                return false;
+            });
+        }
     }
 }
 
