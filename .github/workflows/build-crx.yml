@@ -1,0 +1,101 @@
+name: Build CRX
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      strip_manifest_key:
+        description: 'Remove the "key" field from manifest.json before packing (use when signing with your own .pem)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write  # needed to upload assets to a release
+
+jobs:
+  build-crx:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Read Node.js version from .nvmrc
+        id: nvmrc
+        run: echo "node-version=$(cat .nvmrc)" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ steps.nvmrc.outputs.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build extension (populates dist/)
+        run: npm run build
+
+      - name: Restore production SERVER_PING_PERIOD_IN_MILLIS
+        # build.js patches this value to 10ms for integration tests; revert for distribution.
+        run: |
+          sed -i 's/export const SERVER_PING_PERIOD_IN_MILLIS = 10;/export const SERVER_PING_PERIOD_IN_MILLIS = 5000;/' dist/constants.js
+          grep SERVER_PING_PERIOD_IN_MILLIS dist/constants.js
+
+      - name: Optionally strip manifest "key"
+        if: ${{ inputs.strip_manifest_key == true }}
+        run: |
+          node -e "const fs=require('fs');const p='dist/manifest.json';const m=JSON.parse(fs.readFileSync(p,'utf8'));delete m.key;fs.writeFileSync(p,JSON.stringify(m,null,2));"
+          echo "Stripped 'key' from dist/manifest.json"
+
+      - name: Read extension version
+        id: ext
+        run: |
+          version=$(node -p "require('./dist/manifest.json').version")
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+      - name: Write signing key
+        env:
+          CRX_PRIVATE_KEY: ${{ secrets.CRX_PRIVATE_KEY }}
+        run: |
+          if [ -z "$CRX_PRIVATE_KEY" ]; then
+            echo "::warning::CRX_PRIVATE_KEY secret not set; generating an ephemeral key. The resulting .crx will have an unstable extension ID."
+            openssl genrsa -out key.pem 2048
+          else
+            printf '%s' "$CRX_PRIVATE_KEY" > key.pem
+          fi
+          chmod 600 key.pem
+
+      - name: Pack .crx
+        run: npx --yes crx3@1 -p key.pem -o "witchcraft-${{ steps.ext.outputs.version }}.crx" dist
+
+      - name: Create .zip (for Chrome Web Store upload)
+        run: |
+          cd dist
+          zip -r "../witchcraft-${{ steps.ext.outputs.version }}.zip" .
+
+      - name: Copy manifest alongside artifacts
+        run: cp dist/manifest.json "manifest-${{ steps.ext.outputs.version }}.json"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: witchcraft-${{ steps.ext.outputs.version }}
+          path: |
+            witchcraft-${{ steps.ext.outputs.version }}.crx
+            witchcraft-${{ steps.ext.outputs.version }}.zip
+            manifest-${{ steps.ext.outputs.version }}.json
+          if-no-files-found: error
+
+      - name: Attach assets to release
+        if: ${{ github.event_name == 'release' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            witchcraft-${{ steps.ext.outputs.version }}.crx
+            witchcraft-${{ steps.ext.outputs.version }}.zip
+            manifest-${{ steps.ext.outputs.version }}.json
